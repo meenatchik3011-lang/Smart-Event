@@ -11,12 +11,21 @@ from app.database import get_db
 from app.models import User
 
 
+# =========================================================
+# SECURITY
+# =========================================================
+
 security = HTTPBearer()
 
+
+# =========================================================
+# PASSWORD HASHING
+# =========================================================
 
 def hash_password(password: str) -> str:
     password_bytes = password.encode("utf-8")
 
+    # bcrypt supports a maximum of 72 bytes
     if len(password_bytes) > 72:
         raise ValueError(
             "Password must not exceed 72 bytes."
@@ -44,7 +53,14 @@ def verify_password(
     )
 
 
-def create_access_token(user_id: int) -> str:
+# =========================================================
+# JWT TOKEN
+# =========================================================
+
+def create_access_token(
+    user_id: int,
+    role: str
+) -> str:
 
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.access_token_expire_minutes
@@ -52,6 +68,7 @@ def create_access_token(user_id: int) -> str:
 
     payload = {
         "sub": str(user_id),
+        "role": role,
         "exp": expire
     }
 
@@ -61,6 +78,10 @@ def create_access_token(user_id: int) -> str:
         algorithm=settings.algorithm
     )
 
+
+# =========================================================
+# GET CURRENT USER
+# =========================================================
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -95,6 +116,7 @@ def get_current_user(
             detail="Invalid token"
         )
 
+    # Get user from database
     user = db.query(User).filter(
         User.id == int(user_id)
     ).first()

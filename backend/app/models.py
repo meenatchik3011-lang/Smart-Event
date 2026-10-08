@@ -14,10 +14,18 @@ from sqlalchemy import (
 from app.database import Base
 
 
+# =========================================================
+# USER
+# =========================================================
+
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     username = Column(
         String(100),
@@ -38,16 +46,35 @@ class User(Base):
         nullable=False
     )
 
+    # Phase 2 - Role Based Access Control
+    # Allowed roles:
+    # USER
+    # ORGANIZER
+    # ADMIN
+    role = Column(
+        String(20),
+        default="USER",
+        nullable=False
+    )
+
     created_at = Column(
         DateTime,
         default=datetime.utcnow
     )
 
 
+# =========================================================
+# EVENT
+# =========================================================
+
 class Event(Base):
     __tablename__ = "events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     title = Column(
         String(200),
@@ -104,10 +131,18 @@ class Event(Base):
     )
 
 
+# =========================================================
+# BOOKING
+# =========================================================
+
 class Booking(Base):
     __tablename__ = "bookings"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     user_id = Column(
         Integer,
@@ -143,10 +178,18 @@ class Booking(Base):
     )
 
 
+# =========================================================
+# TICKET
+# =========================================================
+
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     booking_id = Column(
         Integer,
@@ -172,10 +215,18 @@ class Ticket(Base):
     )
 
 
+# =========================================================
+# NOTIFICATION
+# =========================================================
+
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     user_id = Column(
         Integer,
