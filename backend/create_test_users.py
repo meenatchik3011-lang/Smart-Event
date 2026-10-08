@@ -1,4 +1,4 @@
-```python
+
 from app.database import SessionLocal
 from app.models import User
 from app.auth import hash_password
@@ -79,4 +79,3 @@ create_user(
 db.close()
 
 print("Test users setup completed.")
-```
