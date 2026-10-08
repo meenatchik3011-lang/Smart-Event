@@ -4,14 +4,22 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-# =========================
+# =========================================================
 # AUTH
-# =========================
+# =========================================================
 
 class RegisterRequest(BaseModel):
-    username: str = Field(min_length=3, max_length=100)
+    username: str = Field(
+        min_length=3,
+        max_length=100
+    )
+
     email: EmailStr
-    password: str = Field(min_length=6, max_length=100)
+
+    password: str = Field(
+        min_length=6,
+        max_length=100
+    )
 
 
 class LoginRequest(BaseModel):
@@ -31,22 +39,72 @@ class UserResponse(BaseModel):
     role: str
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
-# =========================
+# =========================================================
 # EVENTS
-# =========================
+# =========================================================
 
 class EventCreate(BaseModel):
-    title: str = Field(min_length=2, max_length=200)
+    title: str = Field(
+        min_length=2,
+        max_length=200
+    )
+
     description: str
+
     category: str
+
     location: str
+
     event_date: datetime
-    ticket_price: float = Field(ge=0)
+
+    ticket_price: float = Field(
+        ge=0
+    )
+
     banner_image: Optional[str] = None
-    total_tickets: int = Field(default=100, gt=0)
+
+    total_tickets: int = Field(
+        default=100,
+        gt=0
+    )
+
+
+class EventUpdate(BaseModel):
+    """
+    All fields are optional so the organizer/admin
+    can update only the fields they want to change.
+    """
+
+    title: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=200
+    )
+
+    description: Optional[str] = None
+
+    category: Optional[str] = None
+
+    location: Optional[str] = None
+
+    event_date: Optional[datetime] = None
+
+    ticket_price: Optional[float] = Field(
+        default=None,
+        ge=0
+    )
+
+    banner_image: Optional[str] = None
+
+    total_tickets: Optional[int] = Field(
+        default=None,
+        gt=0
+    )
 
 
 class EventResponse(BaseModel):
@@ -58,20 +116,32 @@ class EventResponse(BaseModel):
     event_date: datetime
     ticket_price: float
     banner_image: Optional[str]
+
     total_tickets: int
     available_tickets: int
+
+    # Phase 2
+    organizer_id: int
+    event_status: str
+
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
-# =========================
+# =========================================================
 # BOOKINGS
-# =========================
+# =========================================================
 
 class BookingCreate(BaseModel):
     event_id: int
-    ticket_quantity: int = Field(gt=0, le=10)
+
+    ticket_quantity: int = Field(
+        gt=0,
+        le=10
+    )
 
 
 class BookingResponse(BaseModel):
@@ -83,12 +153,14 @@ class BookingResponse(BaseModel):
     booking_status: str
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
-# =========================
+# =========================================================
 # TICKETS
-# =========================
+# =========================================================
 
 class TicketResponse(BaseModel):
     id: int
@@ -97,12 +169,14 @@ class TicketResponse(BaseModel):
     qr_code_url: Optional[str]
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
-# =========================
+# =========================================================
 # NOTIFICATIONS
-# =========================
+# =========================================================
 
 class NotificationResponse(BaseModel):
     id: int
@@ -113,4 +187,6 @@ class NotificationResponse(BaseModel):
     is_read: bool
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
