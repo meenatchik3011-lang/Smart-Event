@@ -125,6 +125,22 @@ class Event(Base):
         nullable=False
     )
 
+    # =====================================================
+    # PHASE 2 - ORGANIZER EVENT MANAGEMENT
+    # =====================================================
+
+    organizer_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    event_status = Column(
+        String(20),
+        default="ACTIVE",
+        nullable=False
+    )
+
     created_at = Column(
         DateTime,
         default=datetime.utcnow
