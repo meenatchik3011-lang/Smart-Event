@@ -5,8 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import require_role
-from app.models import Event, User
-from app.schemas import EventCreate, EventResponse, EventUpdate
+from app.models import Event, User, Booking, Notification
+from app.schemas import (
+    EventCreate,
+    EventResponse,
+    EventUpdate,
+    BookingResponse,
+)
 
 
 # =========================================================
@@ -48,7 +53,7 @@ def create_event(
         total_tickets=event_data.total_tickets,
         available_tickets=event_data.total_tickets,
 
-        # Phase 2 fields
+        # Phase 2
         organizer_id=current_user.id,
         event_status="UPCOMING"
     )
@@ -76,7 +81,7 @@ def get_events(
 ):
     query = db.query(Event)
 
-    # Filter by category
+    # Category filter
     if category:
         query = query.filter(
             Event.category.ilike(
@@ -84,7 +89,7 @@ def get_events(
             )
         )
 
-    # Search by title
+    # Title search
     if search:
         query = query.filter(
             Event.title.ilike(
@@ -92,13 +97,11 @@ def get_events(
             )
         )
 
-    events = (
+    return (
         query
         .order_by(Event.event_date.asc())
         .all()
     )
-
-    return events
 
 
 # =========================================================
@@ -116,7 +119,7 @@ def get_my_events(
         require_role("ORGANIZER")
     )
 ):
-    events = (
+    return (
         db.query(Event)
         .filter(
             Event.organizer_id == current_user.id
@@ -125,13 +128,60 @@ def get_my_events(
         .all()
     )
 
-    return events
+
+# =========================================================
+# GET BOOKINGS FOR ORGANIZER EVENT
+# ORGANIZER ONLY + OWN EVENT
+# =========================================================
+
+@router.get(
+    "/organizer/events/{event_id}/bookings",
+    response_model=list[BookingResponse]
+)
+def get_event_bookings(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role("ORGANIZER")
+    )
+):
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if not event:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found"
+        )
+
+    # Ownership validation
+    if event.organizer_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "You can only view bookings "
+                "for your own events"
+            )
+        )
+
+    return (
+        db.query(Booking)
+        .filter(
+            Booking.event_id == event_id
+        )
+        .order_by(
+            Booking.created_at.desc()
+        )
+        .all()
+    )
 
 
 # =========================================================
 # UPDATE EVENT
-# ORGANIZER ONLY
-# OWN EVENT ONLY
+# ORGANIZER ONLY + OWN EVENT
 # =========================================================
 
 @router.put(
@@ -162,14 +212,27 @@ def update_event(
     if event.organizer_id != current_user.id:
         raise HTTPException(
             status_code=403,
-            detail="You can only update your own events"
+            detail=(
+                "You can only update "
+                "your own events"
+            )
+        )
+
+    # Do not update a cancelled event
+    if event.event_status == "CANCELLED":
+        raise HTTPException(
+            status_code=400,
+            detail="Cancelled events cannot be updated"
         )
 
     update_data = event_data.model_dump(
         exclude_unset=True
     )
 
-    # Update total tickets safely
+    # =====================================================
+    # UPDATE TOTAL TICKETS SAFELY
+    # =====================================================
+
     if "total_tickets" in update_data:
 
         new_total = update_data["total_tickets"]
@@ -196,7 +259,10 @@ def update_event(
 
         del update_data["total_tickets"]
 
-    # Update remaining fields
+    # =====================================================
+    # UPDATE OTHER FIELDS
+    # =====================================================
+
     for field, value in update_data.items():
         setattr(event, field, value)
 
@@ -208,8 +274,7 @@ def update_event(
 
 # =========================================================
 # CANCEL EVENT
-# ORGANIZER ONLY
-# OWN EVENT ONLY
+# ORGANIZER ONLY + OWN EVENT
 # =========================================================
 
 @router.patch(
@@ -239,16 +304,49 @@ def cancel_event(
     if event.organizer_id != current_user.id:
         raise HTTPException(
             status_code=403,
-            detail="You can only cancel your own events"
+            detail=(
+                "You can only cancel "
+                "your own events"
+            )
         )
 
+    # Already cancelled
     if event.event_status == "CANCELLED":
         raise HTTPException(
             status_code=400,
             detail="Event is already cancelled"
         )
 
+    # Change status
     event.event_status = "CANCELLED"
+
+    # =====================================================
+    # SEND NOTIFICATION TO BOOKED USERS
+    # =====================================================
+
+    bookings = (
+        db.query(Booking)
+        .filter(
+            Booking.event_id == event.id,
+            Booking.booking_status == "CONFIRMED"
+        )
+        .all()
+    )
+
+    for booking in bookings:
+
+        notification = Notification(
+            user_id=booking.user_id,
+            title="Event Cancelled",
+            message=(
+                f"The event '{event.title}' "
+                "has been cancelled."
+            ),
+            type="EVENT",
+            is_read=False
+        )
+
+        db.add(notification)
 
     db.commit()
     db.refresh(event)

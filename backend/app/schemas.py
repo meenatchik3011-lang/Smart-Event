@@ -76,8 +76,9 @@ class EventCreate(BaseModel):
 
 class EventUpdate(BaseModel):
     """
-    All fields are optional so the organizer/admin
-    can update only the fields they want to change.
+    All fields are optional.
+    The organizer can update only the fields
+    that need to be changed.
     """
 
     title: Optional[str] = Field(
@@ -109,19 +110,29 @@ class EventUpdate(BaseModel):
 
 class EventResponse(BaseModel):
     id: int
+
     title: str
+
     description: str
+
     category: str
+
     location: str
+
     event_date: datetime
+
     ticket_price: float
+
     banner_image: Optional[str]
 
     total_tickets: int
+
     available_tickets: int
 
-    # Phase 2
+    # Phase 2 - RBAC / Organizer Management
     organizer_id: int
+
+    # UPCOMING / ONGOING / COMPLETED / CANCELLED
     event_status: str
 
     created_at: datetime
@@ -146,11 +157,17 @@ class BookingCreate(BaseModel):
 
 class BookingResponse(BaseModel):
     id: int
+
     user_id: int
+
     event_id: int
+
     ticket_quantity: int
+
     total_price: float
+
     booking_status: str
+
     created_at: datetime
 
     model_config = ConfigDict(
@@ -164,9 +181,13 @@ class BookingResponse(BaseModel):
 
 class TicketResponse(BaseModel):
     id: int
+
     booking_id: int
+
     ticket_code: str
+
     qr_code_url: Optional[str]
+
     created_at: datetime
 
     model_config = ConfigDict(
@@ -180,13 +201,63 @@ class TicketResponse(BaseModel):
 
 class NotificationResponse(BaseModel):
     id: int
+
     user_id: int
+
     title: str
+
     message: str
+
     type: str
+
     is_read: bool
+
     created_at: datetime
 
     model_config = ConfigDict(
         from_attributes=True
     )
+
+
+# =========================================================
+# MODULE 9 - ORGANIZER ANALYTICS
+# =========================================================
+
+class OrganizerEventAnalytics(BaseModel):
+    """
+    Analytics for one event owned by the organizer.
+    """
+
+    event_id: int
+
+    event_title: str
+
+    total_tickets: int
+
+    tickets_sold: int
+
+    remaining_tickets: int
+
+    total_revenue: float
+
+    booking_count: int
+
+
+# =========================================================
+# MODULE 11 - ADMIN ANALYTICS
+# =========================================================
+
+class AdminAnalyticsResponse(BaseModel):
+    """
+    Overall platform analytics available to ADMIN.
+    """
+
+    total_users: int
+
+    total_events: int
+
+    total_tickets_sold: int
+
+    total_bookings: int
+
+    platform_revenue: float

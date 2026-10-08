@@ -1,17 +1,21 @@
 import os
 
 import app.models
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
+
 from app.routes import (
     auth,
     bookings,
     events,
     notifications,
     tickets,
+    organizer,
+    admin,
 )
 
 
@@ -19,7 +23,7 @@ from app.routes import (
 # DATABASE
 # =========================================================
 
-# Create all database tables
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
 
@@ -70,11 +74,12 @@ QR_FOLDER = os.path.join(
     "qr"
 )
 
-# Create folders if they don't exist
+
+# Create static/qr folder if it doesn't exist
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 
-# Serve /static files
+# Serve static files
 app.mount(
     "/static",
     StaticFiles(directory=STATIC_FOLDER),
@@ -86,15 +91,26 @@ app.mount(
 # API ROUTES
 # =========================================================
 
+# Authentication
 app.include_router(auth.router)
 
+# Event discovery and management
 app.include_router(events.router)
 
+# Booking APIs
 app.include_router(bookings.router)
 
+# Ticket APIs
 app.include_router(tickets.router)
 
+# Notification APIs
 app.include_router(notifications.router)
+
+# Organizer analytics
+app.include_router(organizer.router)
+
+# Admin dashboard and analytics
+app.include_router(admin.router)
 
 
 # =========================================================
