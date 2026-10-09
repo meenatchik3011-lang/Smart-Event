@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from sqlalchemy import (
@@ -15,7 +16,7 @@ from app.database import Base
 
 
 # =========================================================
-# USER
+# USER MODEL
 # =========================================================
 
 class User(Base):
@@ -46,11 +47,7 @@ class User(Base):
         nullable=False
     )
 
-    # Phase 2 - Role Based Access Control
-    # Allowed roles:
-    # USER
-    # ORGANIZER
-    # ADMIN
+    # Allowed roles: USER, ORGANIZER, ADMIN
     role = Column(
         String(20),
         default="USER",
@@ -59,12 +56,13 @@ class User(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
+        nullable=False
     )
 
 
 # =========================================================
-# EVENT
+# EVENT MODEL
 # =========================================================
 
 class Event(Base):
@@ -98,7 +96,14 @@ class Event(Base):
         nullable=False
     )
 
+    # Event start date and time
     event_date = Column(
+        DateTime,
+        nullable=False
+    )
+
+    # Module 10: Event end date and time
+    event_end_date = Column(
         DateTime,
         nullable=False
     )
@@ -125,30 +130,32 @@ class Event(Base):
         nullable=False
     )
 
-    # =====================================================
-    # PHASE 2 - ORGANIZER EVENT MANAGEMENT
-    # =====================================================
-
+    # Organizer who owns this event
     organizer_id = Column(
         Integer,
         ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
+    # Event lifecycle:
+    # UPCOMING, ONGOING, COMPLETED, CANCELLED
     event_status = Column(
         String(20),
-        default="ACTIVE",
-        nullable=False
+        default="UPCOMING",
+        nullable=False,
+        index=True
     )
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
+        nullable=False
     )
 
 
 # =========================================================
-# BOOKING
+# BOOKING MODEL
 # =========================================================
 
 class Booking(Base):
@@ -163,13 +170,15 @@ class Booking(Base):
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     event_id = Column(
         Integer,
         ForeignKey("events.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     ticket_quantity = Column(
@@ -182,6 +191,7 @@ class Booking(Base):
         nullable=False
     )
 
+    # Example statuses: CONFIRMED, CANCELLED
     booking_status = Column(
         String(20),
         default="CONFIRMED",
@@ -190,12 +200,13 @@ class Booking(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
+        nullable=False
     )
 
 
 # =========================================================
-# TICKET
+# TICKET MODEL
 # =========================================================
 
 class Ticket(Base):
@@ -210,7 +221,8 @@ class Ticket(Base):
     booking_id = Column(
         Integer,
         ForeignKey("bookings.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     ticket_code = Column(
@@ -227,12 +239,13 @@ class Ticket(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
+        nullable=False
     )
 
 
 # =========================================================
-# NOTIFICATION
+# NOTIFICATION MODEL
 # =========================================================
 
 class Notification(Base):
@@ -247,7 +260,8 @@ class Notification(Base):
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     title = Column(
@@ -260,6 +274,7 @@ class Notification(Base):
         nullable=False
     )
 
+    # Example types: SYSTEM, EVENT
     type = Column(
         String(20),
         default="SYSTEM",
@@ -268,10 +283,12 @@ class Notification(Base):
 
     is_read = Column(
         Boolean,
-        default=False
+        default=False,
+        nullable=False
     )
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
+        nullable=False
     )

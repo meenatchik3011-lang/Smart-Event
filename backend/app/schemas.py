@@ -1,7 +1,14 @@
+
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    model_validator,
+)
 
 
 # =========================================================
@@ -55,12 +62,11 @@ class EventCreate(BaseModel):
     )
 
     description: str
-
     category: str
-
     location: str
 
     event_date: datetime
+    event_end_date: datetime
 
     ticket_price: float = Field(
         ge=0
@@ -73,12 +79,20 @@ class EventCreate(BaseModel):
         gt=0
     )
 
+    @model_validator(mode="after")
+    def validate_event_dates(self):
+        if self.event_end_date <= self.event_date:
+            raise ValueError(
+                "event_end_date must be after event_date"
+            )
+
+        return self
+
 
 class EventUpdate(BaseModel):
     """
     All fields are optional.
-    The organizer can update only the fields
-    that need to be changed.
+    Only supplied fields will be updated.
     """
 
     title: Optional[str] = Field(
@@ -88,12 +102,11 @@ class EventUpdate(BaseModel):
     )
 
     description: Optional[str] = None
-
     category: Optional[str] = None
-
     location: Optional[str] = None
 
     event_date: Optional[datetime] = None
+    event_end_date: Optional[datetime] = None
 
     ticket_price: Optional[float] = Field(
         default=None,
@@ -107,29 +120,39 @@ class EventUpdate(BaseModel):
         gt=0
     )
 
+    @model_validator(mode="after")
+    def validate_event_dates(self):
+        # Check the dates together when both are supplied.
+        if (
+            self.event_date is not None
+            and self.event_end_date is not None
+            and self.event_end_date <= self.event_date
+        ):
+            raise ValueError(
+                "event_end_date must be after event_date"
+            )
+
+        return self
+
 
 class EventResponse(BaseModel):
     id: int
 
     title: str
-
     description: str
-
     category: str
-
     location: str
 
     event_date: datetime
+    event_end_date: datetime
 
     ticket_price: float
-
     banner_image: Optional[str]
 
     total_tickets: int
-
     available_tickets: int
 
-    # Phase 2 - RBAC / Organizer Management
+    # Phase 2: Organizer management
     organizer_id: int
 
     # UPCOMING / ONGOING / COMPLETED / CANCELLED
@@ -157,17 +180,11 @@ class BookingCreate(BaseModel):
 
 class BookingResponse(BaseModel):
     id: int
-
     user_id: int
-
     event_id: int
-
     ticket_quantity: int
-
     total_price: float
-
     booking_status: str
-
     created_at: datetime
 
     model_config = ConfigDict(
@@ -181,13 +198,9 @@ class BookingResponse(BaseModel):
 
 class TicketResponse(BaseModel):
     id: int
-
     booking_id: int
-
     ticket_code: str
-
     qr_code_url: Optional[str]
-
     created_at: datetime
 
     model_config = ConfigDict(
@@ -201,17 +214,11 @@ class TicketResponse(BaseModel):
 
 class NotificationResponse(BaseModel):
     id: int
-
     user_id: int
-
     title: str
-
     message: str
-
     type: str
-
     is_read: bool
-
     created_at: datetime
 
     model_config = ConfigDict(
@@ -224,22 +231,12 @@ class NotificationResponse(BaseModel):
 # =========================================================
 
 class OrganizerEventAnalytics(BaseModel):
-    """
-    Analytics for one event owned by the organizer.
-    """
-
     event_id: int
-
     event_title: str
-
     total_tickets: int
-
     tickets_sold: int
-
     remaining_tickets: int
-
     total_revenue: float
-
     booking_count: int
 
 
@@ -248,16 +245,9 @@ class OrganizerEventAnalytics(BaseModel):
 # =========================================================
 
 class AdminAnalyticsResponse(BaseModel):
-    """
-    Overall platform analytics available to ADMIN.
-    """
-
     total_users: int
-
     total_events: int
-
     total_tickets_sold: int
-
     total_bookings: int
-
     platform_revenue: float
+
